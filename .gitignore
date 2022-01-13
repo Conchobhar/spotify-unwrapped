@@ -1,0 +1,6 @@
+.ipynb_checkpoints
+data/
+dev/
+credentials/
+*egg-info/
+__pycache__/
