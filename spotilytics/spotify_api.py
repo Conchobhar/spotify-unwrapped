@@ -110,3 +110,30 @@ class SpotiyAPI:
                 metadata['popularity'] = item['popularity']
 
         return metadata
+
+    def get_spotify_metadata_for_artist_search(self, artist):
+        """Get meta data for a specific artist/track which we do not have the , assuming the first result will be the relevent one.
+        We run this for each unique (artist, track) in our history to get metadata for them.
+
+        :param artist: string for artist
+        :return: Dictionary of relevant meta data
+        """
+        # construct query
+        endpoint = f"{SPOTIFY_BASE_URL}search?q=artist:'{quote(artist)}'&type=artist"
+        search_request = self.make_get_request(endpoint, headers=self.headers)
+        data = search_request.json()
+        metadata = {'status_code': search_request.status_code, 'nitems': None, 'href': None, 'id': None,
+                    'popularity': None}
+
+        if search_request.status_code == 200:
+            items = data['artists']['items']
+            metadata['nitems'] = len(items)
+            if len(items) > 0:
+                item = items[0]  # Assume first item is what we want
+                metadata['href'] = item['href']
+                metadata['id'] = item['id']
+                metadata['name'] = item['name']
+                metadata['popularity'] = item['popularity']
+                metadata['followers'] = item['followers']['total']
+                metadata['genres'] = item['genres']
+        return metadata

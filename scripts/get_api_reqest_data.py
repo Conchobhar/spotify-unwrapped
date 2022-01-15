@@ -13,14 +13,15 @@ data_directory = spy.PROJECT_DIRECTORY / 'data'
 
 df_full = spy.load_streaming_history(data_directory=data_directory, full=True)
 artist_track_pairs = df_full[['artistName', 'trackName']].drop_duplicates().values
+unique_artists = df_full.artistName.dropna().drop_duplicates().values
 
 
-def get_metadata():
+def get_track_metadata_from_search():
     """Used for searching for (artist,track) and assuming first result is the relevent entry.
     Initially used to get track id but later realised this is included in the listening history (`spotify_track_uri`).
     """
     metadata = {}
-    for artist, track_name in tqdm(artist_track_pairs[1000::]):
+    for artist, track_name in tqdm(artist_track_pairs):
         keep_attempting_request = True
         data = None
         try:
@@ -40,6 +41,34 @@ def get_metadata():
 
     mdf = pd.DataFrame.from_dict(metadata, orient='index')
     mdf.to_csv(data_directory / 'track_metadata.csv')
+
+
+def get_artist_metadata_from_search():
+    """Used for searching for (artist,track) and assuming first result is the relevent entry.
+    Initially used to get track id but later realised this is included in the listening history (`spotify_track_uri`).
+    """
+    metadata = {}
+    print(f"Requesting artist data on {len(unique_artists)} artists.")
+    for artist in tqdm(unique_artists):
+        keep_attempting_request = True
+        data = None
+        try:
+            while keep_attempting_request:
+                data = spotifyapi.get_spotify_metadata_for_artist_search(artist)
+                keep_attempting_request = spotifyapi.is_rate_limited or spotifyapi.is_token_expired
+                if spotifyapi.is_token_expired:
+                    print('Access token expired - refreshing')
+                    spotifyapi.refresh_access_token_and_headers()
+                if spotifyapi.is_rate_limited:
+                    print('Rate limited...')
+                    time.sleep(30)
+        except Exception as err:
+            print(f'Exception hit for {artist}: {err.__repr__()}')
+            data = err
+        metadata[artist] = data
+
+    mdf = pd.DataFrame.from_dict(metadata, orient='index')
+    mdf.to_csv(data_directory / 'artist_metadata.csv')
 
 
 audio_features_empty = {
@@ -65,6 +94,7 @@ audio_features_empty = {
 
 
 def get_audio_features():
+    """Read in streaming history and use track_ids to request audio features."""
     df = df_full.dropna(subset=['track_id'])
     audio_features = {}
     for idx in tqdm(range(0, df.shape[0] - 1, 100)):
@@ -76,24 +106,24 @@ def get_audio_features():
                 data = spotifyapi.get_several_track_audio_features(df_subset.track_id.values)
                 keep_attempting_request = spotifyapi.is_rate_limited or spotifyapi.is_token_expired
                 if spotifyapi.is_token_expired:
-                    print('Access token expired - refreshing')
+                    print(f'\nAccess token expired - refreshing')
                     spotifyapi.refresh_access_token_and_headers()
                 if spotifyapi.is_rate_limited:
-                    print('Rate limited...')
+                    print(f'\nRate limited...')
                     time.sleep(30)
-            for artist, features in zip(df_subset.track_id, data['audio_features']):
+            for track_id, features in zip(df_subset.track_id, data['audio_features']):
                 if features is None:
                     features = audio_features_empty
-                audio_features[artist] = features
+                audio_features[track_id] = features
         except Exception as err:
-            print(f'Exception hit for idx {idx}: {err}')
+            print(f'\nException hit for idx {idx}: {err}')
 
-    # Save out raw json incase pandas step breaks...
-    audio_features_json = {}
-    for k, v in audio_features.items():
-        audio_features_json['_ARTIST_TRACK_'.join(k)] = v  # Need to join tuple key to save
-    with open(data_directory / 'audio_features.json', 'w') as f:
-        json.dump(audio_features_json, f)
+    # # Save out raw json incase pandas step breaks...
+    # audio_features_json = {}
+    # for k, v in audio_features.items():
+    #     audio_features_json[k] = v
+    # with open(data_directory / 'audio_features.json', 'w') as f:
+    #     json.dump(audio_features_json, f)
     # with open(data_directory / 'audio_features.json', 'r') as f:
     #     audio_features_json_load = json.load(f)
     afdf = pd.DataFrame.from_dict(audio_features, orient='index')
@@ -101,4 +131,5 @@ def get_audio_features():
 
 
 if __name__ == '__main__':
-    get_audio_features()
+    get_artist_metadata_from_search()
+    # get_audio_features()
