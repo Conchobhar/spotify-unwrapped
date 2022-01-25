@@ -1,6 +1,6 @@
-import os
-import json
 import zipfile
+from ast import literal_eval
+
 import pandas as pd
 from pathlib import Path
 
@@ -35,3 +35,31 @@ def load_streaming_history(data_directory=DATA_DIRECTORY, full=True):
     df = df.drop_duplicates(subset='endTime')
     df['track_id'] = df.spotify_track_uri.apply(lambda x: x.split(':')[-1])
     return df
+
+
+class SpotifyData:
+
+    def __init__(self):
+        df_full_cols = ['track_id', 'endTime', 'ms_played', 'conn_country', 'trackName', 'artistName', 'albumName',
+                        'spotify_track_uri', 'reason_start', 'reason_end', 'shuffle', 'skipped', ]
+        self.df_full = load_streaming_history()[df_full_cols]
+
+        mdf_cols = ['id', 'popularity']
+        self.mdf = pd.read_csv(DATA_DIRECTORY / 'track_metadata.csv', index_col=[0, 1])[mdf_cols]
+
+        afdf_cols = ['id', 'danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 'acousticness',
+                     'instrumentalness', 'liveness', 'valence', 'tempo', ]
+        self.afdf = pd.read_csv(DATA_DIRECTORY / 'audio_features.csv', index_col=[0])[afdf_cols]
+
+        artist_df_cols = ['id', 'genres', 'popularity', 'followers', ]
+        self.artist_df = pd.read_csv(DATA_DIRECTORY / 'artist_metadata.csv', index_col=[0])[artist_df_cols].dropna()
+
+        self.artist_df.genres = self.artist_df.genres.apply(literal_eval)
+        self.df_full.endTime = self.df_full.endTime.apply(lambda x: pd.to_datetime(x[0:-1]))
+
+        self.df = (
+            self.df_full
+            .merge(self.mdf, how='left', left_on=['artistName', 'trackName'], right_index=True)
+            .merge(self.afdf, how='left', left_on='track_id', right_on='id')
+            .merge(self.artist_df['genres'], how='left', left_on='artistName', right_index=True)
+            .set_index('endTime').sort_index())
