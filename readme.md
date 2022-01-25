@@ -1,7 +1,9 @@
-# Spotify Analytics
-Spotify streaming history analytics
+# Spotify Unwrapped
+Detailed streaming history analytics
+
+![Genre cluster spectra](output/genre_cluster_spectra.png)
 
 # Using the Spotify API
-Need to generate credentials by creating a web app:
+Generate credentials by creating a web app:
 
 https://developer.spotify.com/dashboard/applications
