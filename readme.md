@@ -4,6 +4,9 @@ Spotify summarize individual users listening histories at the end of each year w
 
 By requesting personal streaming data and connecting with the Spotify web API, we can unwrap our listening history.
 
+![Unwrapped Pleasures](output/unwrapped_pleasures.png)
+
+
 # Data
 Streaming history arrives in the form:
 <table border="1" class="dataframe">  <thead>    <tr style="text-align: right;">      <th>track_id</th>      <th>endTime</th>      <th>ms_played</th>      <th>conn_country</th>      <th>trackName</th>      <th>artistName</th>      <th>albumName</th>      <th>spotify_track_uri</th>      <th>reason_start</th>      <th>reason_end</th>      <th>shuffle</th>      <th>skipped</th>    </tr>  </thead>  <tbody>    <tr>       <td>19Oy2pBYfpz7OhraQQgUn8</td>      <td>2015-12-31 23:44:26</td>      <td>148285</td>      <td>GB</td>      <td>Negotiation's Over</td>      <td>OGRE Sound</td>      <td>195</td>      <td>spotify:track:19Oy2pBYfpz7OhraQQgUn8</td>      <td>clickrow</td>      <td>trackdone</td>      <td>False</td>      <td>0.0</td>    </tr>  </tbody></table>
