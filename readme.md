@@ -2,12 +2,26 @@
 
 Spotify summarize individual users listening histories at the end of each year with [spotify-wrapped](https://engineering.atspotify.com/2020/02/18/spotify-unwrapped-how-we-brought-you-a-decade-of-data/).
 
-By requesting personal streaming data and connecting with the Spotify web API, we can unwrap that and view the data at any level we want.
+By requesting personal streaming data and connecting with the Spotify web API, we can unwrap our listening history.
 
 # Data
 Streaming history arrives in the form:
 <table border="1" class="dataframe">  <thead>    <tr style="text-align: right;">      <th>track_id</th>      <th>endTime</th>      <th>ms_played</th>      <th>conn_country</th>      <th>trackName</th>      <th>artistName</th>      <th>albumName</th>      <th>spotify_track_uri</th>      <th>reason_start</th>      <th>reason_end</th>      <th>shuffle</th>      <th>skipped</th>    </tr>  </thead>  <tbody>    <tr>       <td>19Oy2pBYfpz7OhraQQgUn8</td>      <td>2015-12-31 23:44:26</td>      <td>148285</td>      <td>GB</td>      <td>Negotiation's Over</td>      <td>OGRE Sound</td>      <td>195</td>      <td>spotify:track:19Oy2pBYfpz7OhraQQgUn8</td>      <td>clickrow</td>      <td>trackdone</td>      <td>False</td>      <td>0.0</td>    </tr>  </tbody></table>
 
+The raw data may be partitioned e.g.
+```
+|-data
+|  |-my_spotify_data.zip
+|  |-MyData
+|  |  |-2021_3.json
+|  |  |-2023.json
+|  |  |-2023_5.json
+|  |  |-2016_0.json
+|  |  |-2018_1.json
+|  |  |-Streaming_History_Audio_2023_6.json
+|  |  |-2020_2.json
+|  |  |-2022_4.json
+```
 
 From `track_id` we can request *audio_features* from the spotify web API.
 
@@ -56,7 +70,7 @@ Or looking at the top 20 artists in a given genre cluster (coloured by track nam
 - Generate credentials by creating a web app: https://developer.spotify.com/dashboard/applications
 - Place credentials in `credentials/client_credentials.json` (you can use the json template provided in directory)
 - Once delivered, place `my_spotify_data.zip` in `data/`
-- Run `scripts/get_api_request_data.py` to collect metadata
+- Run `scripts/call_api.py` to collect metadata
 - Run `notebooks/spotify-views.ipynb` and edit where necessary
 
 **Note**: The full data request vs past year have slightly different column headers and the past year may contain less information,
