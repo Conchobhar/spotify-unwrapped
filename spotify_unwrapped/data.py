@@ -29,14 +29,17 @@ def load_streaming_history(source:str=None, extended:bool=False) -> pd.DataFrame
     :return: DataFrame of combined streaming history
     """
     df = None
+    source_path = None
     if source is None:
         for file in DATA_DIRECTORY.glob('*.zip'):
             if 'my_spotify_data' in file.name:
                 source_path = DATA_DIRECTORY / file
                 break
-        if source is None:
+        if source_path is None:
             logger.error(f"Could not find a zip file in {DATA_DIRECTORY}")
             return
+        else:
+            logger.info(f"Found zip file {source_path}")
     else:
         if not (DATA_DIRECTORY/source).exists():
             logger.error(f"File {source} does not exist.")
@@ -53,12 +56,12 @@ def load_streaming_history(source:str=None, extended:bool=False) -> pd.DataFrame
         'master_metadata_album_album_name': 'albumName',
     }
     if source_path.suffix == '.zip':
-        with zipfile.ZipFile(source) as z:
+        with zipfile.ZipFile(source_path) as z:
             for filename in z.namelist():
                 filepath = Path(filename)
                 if filepath.name.startswith(filename_hx) or pattern_hx.match(filepath.name):
                     with z.open(filename) as f:
-                        dfs.append(pd.read_json(f))
+                        dfs.append(pd.read_json(f).rename(columns=col_full_to_past_year))
     elif source_path.is_dir():
         for file in source_path.glob('*.json'):
             if file.name.startswith(filename_hx) or pattern_hx.match(file.name):
